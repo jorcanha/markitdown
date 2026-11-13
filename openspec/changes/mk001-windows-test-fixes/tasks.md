@@ -267,7 +267,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 5. Documentation
 
-- [ ] 5.1 `CLAUDE.md:108-112` — replace the whole "Windows baseline" bullet (five lines, from
+- [x] 5.1 `CLAUDE.md:108-112` — replace the whole "Windows baseline" bullet (five lines, from
       `- **Windows baseline (2026-11-13, upstream` to `which is always UTF-8.`) with:
 
       ```markdown
@@ -310,6 +310,9 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
           (task 3.2) is done and the full suite has confirmed the number. Use the measured number if it differs.
       (c) Commit `docs(mk001-windows-test-fixes): correct the PYTHONIOENCODING note and the baseline count` and push.
           Then tick this task.
+
+      **R2 applied on 2026-11-13.** Steps (a)–(c) done as written; the baseline in `CLAUDE.md:109` is the measured
+      `1141 passed, 49 skipped, 0 failed`.
 
 - [x] 5.2 `CLAUDE.md`, section "What this repo is" — after its last bullet (line 18) add:
       `- Other coding agents start from [`AGENTS.md`](AGENTS.md), which points here.`

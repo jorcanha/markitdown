@@ -106,15 +106,17 @@ $env:GITHUB_ACTIONS = "1"           # skips tests that need the network
   through the Python API instead of spawning the CLI per file.
 - Network tests (YouTube, remote Wikipedia…) are skipped when `GITHUB_ACTIONS` is set (see `skip_remote` in `tests/test_module_vectors.py`).
 - Shells: the Bash tool is Git Bash (`/c/Users/...`); PowerShell 7 is the owner's main shell — verify CLI behavior there.
-- **Windows baseline (after `mk001`, upstream `ed17895`, `GITHUB_ACTIONS=1`)**: 1140 passed, 49 skipped, 0 failed —
+- **Windows baseline (after `mk001`, upstream `ed17895`, `GITHUB_ACTIONS=1`)**: 1141 passed, 49 skipped, 0 failed —
   without `PYTHONUTF8`. Upstream CI exports `PYTHONUTF8=1`; the fork's suite must stay green without it.
 - **CLI output encoding**: a redirected or piped stdout is UTF-8 (unless `PYTHONIOENCODING` is set, which wins).
   `markitdown <file> -o <out.md>` is UTF-8 in every shell and is the recommended form: Windows PowerShell 5.1 (`>`)
   and PowerShell pipelines into cmdlets or variables re-encode a native command's output and can still corrupt
   non-ASCII text, which the CLI cannot prevent.
-- **Agent sessions may export `PYTHONIOENCODING`** (seen in a Claude Code session as `utf-8:surrogateescape`; not set at user or machine level). It makes the CLI
-  child processes in tests write UTF-8 while the old tests decode cp1252, so a baseline run shows 10 failures instead of
-  the real 4, and it disables the stdout fix on purpose. Before running the suite: `Remove-Item Env:PYTHONIOENCODING`.
+- **Claude Code's PowerShell tool exports `PYTHONIOENCODING=utf-8:surrogateescape`** (its Bash tool does not;
+  it is not set at user or machine level). The suite is green with or without it, but while it is set the CLI
+  honors it and skips its own UTF-8 fix, so a manual check such as `markitdown f > out.md` proves nothing.
+  Run `Remove-Item Env:PYTHONIOENCODING` before verifying CLI output by hand, and before measuring a baseline
+  on commits older than `mk001` (they show 10 failures instead of 4 with the variable set).
 - Other packages on Windows: `markitdown-ocr` 108 passed, `markitdown-mcp` 21 passed, `markitdown-sample-plugin` 2 passed.
 - Coverage (in process): 89 % overall; `converters/_pdf_converter.py` 66 %, `__main__.py` 74 %.
 
