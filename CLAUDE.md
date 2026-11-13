@@ -74,7 +74,10 @@ Every change lives on its own branch; nothing from a change lands on `main` dire
 - Upstream workflows were moved from `.github/workflows/` to `.github/workflows-disabled/` (`tests.yml`, `pre-commit.yml`),
   so GitHub does not run them. To re-enable: `git mv .github/workflows-disabled .github/workflows`
   (fix the Windows test issues below first, and consider adding a Windows job).
-- `.github/dependabot.yml` only watches GitHub Actions versions; with no active workflows it has nothing to update.
+- Dependabot is disabled too: its config was moved to `.github/workflows-disabled/dependabot.yml` (restore it to
+  `.github/dependabot.yml` when re-enabling CI). Its first run opened PRs #1/#2, which were closed.
+- Before disabling, upstream's `tests` and `pre-commit` workflows **passed on Linux** (ubuntu-latest) in those PRs,
+  confirming that the local test failures listed below are Windows-specific.
 
 ## Development environment (Windows 11, Python 3.13, uv)
 
@@ -151,4 +154,4 @@ Conversion flow (`_markitdown.py`):
   (Microsoft + Jorge Cañas). README with fork notice. `.gitignore` = GitHub Python template + upstream entries + `/output/`.
 - 2026-11-13: OpenSpec initialized (Claude Code skills/commands in `.claude/`). Change ids `mkNNN-<name>`, branch per change
   (`feature/<change-id>`), merge to `main` via PR at archive time. All repo content in English. GitHub Actions disabled
-  (workflows moved to `.github/workflows-disabled/`). `gh` default repo pinned to the fork.
+  (workflows and Dependabot config moved to `.github/workflows-disabled/`). `gh` default repo pinned to the fork.
