@@ -114,12 +114,12 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 - [x] 2.6 Red phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py -q -p no:cacheprovider`
       → expected `28 failed, 61 passed, 20 skipped`: 13 × `test_output_to_stdout`, 13 × `test_input_from_stdin_without_hints`,
       `test_redirected_stdout_is_utf8_even_with_legacy_locale`, `test_cli_redirected_stdout_is_utf8_without_python_utf8_mode`.
-- [ ] 2.7 Commit `test(mk001-windows-test-fixes): decode CLI stdout as UTF-8 and cover stdout encoding` (body: red until
+- [x] 2.7 Commit `test(mk001-windows-test-fixes): decode CLI stdout as UTF-8 and cover stdout encoding` (body: red until
       the next commit) and push.
 
 ## 3. CLI fix (green phase)
 
-- [ ] 3.1 `packages/markitdown/src/markitdown/__main__.py:315-319` (`_handle_output`, stdout branch) (design D1).
+- [x] 3.1 `packages/markitdown/src/markitdown/__main__.py:315-319` (`_handle_output`, stdout branch) (design D1).
 
       Before:
 
@@ -147,7 +147,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
               print(result.markdown.encode(encoding, errors="replace").decode(encoding))
       ```
 
-- [ ] 3.2 `packages/markitdown/src/markitdown/__main__.py` — add before `def _exit_with_error` (line 322), two blank lines
+- [x] 3.2 `packages/markitdown/src/markitdown/__main__.py` — add before `def _exit_with_error` (line 322), two blank lines
       above and below. `os` is already imported (line 5).
 
       ```python
@@ -160,9 +160,9 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
           )
       ```
 
-- [ ] 3.3 Green phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q -p no:cacheprovider`
+- [x] 3.3 Green phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q -p no:cacheprovider`
       → expected `1140 passed, 49 skipped`, no `failed`.
-- [ ] 3.4 Commit `fix(mk001-windows-test-fixes): write UTF-8 when stdout is redirected or piped` (body: output changes from
+- [x] 3.4 Commit `fix(mk001-windows-test-fixes): write UTF-8 when stdout is redirected or piped` (body: output changes from
       the ANSI code page to UTF-8 on Windows; `PYTHONIOENCODING` restores a legacy encoding) and push.
 
 ## 4. Manual verification (PowerShell 7)
