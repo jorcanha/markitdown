@@ -24,6 +24,9 @@ context: |
   Commits: Conventional Commits with the change id as scope, e.g.
   "feat(mk001-pdf-noise-cleanup): strip repeated page headers".
 
+  Upstream first: run `git fetch upstream` before proposing a change and check that upstream/main has
+  not already fixed it (the fork once started from a clone 122 commits behind).
+
   Upstream compatibility: prefer opt-in behavior (new flags/parameters whose defaults
   keep upstream behavior) to keep future merges from upstream easy. Never remove
   Microsoft copyright notices; new files may carry the fork maintainer's SPDX header.
@@ -50,8 +53,9 @@ rules:
     - Each verification task gives the exact command (PowerShell) and the expected result (e.g. the pytest summary line).
     - Write the tests first and include a task that confirms they fail for the expected reason before the fix.
     - Every behavior change includes a test task under packages/markitdown/tests/; prefer tests that fail without the fix on every OS.
-    - "Format only touched files with the pinned black: uvx black==23.7.0 <files>. Never reformat untouched upstream files."
+    - "Format only touched files with black at the version pinned in .pre-commit-config.yaml (uvx black==<rev> <files>). Never reformat untouched upstream files."
     - Include a final task to run the test suite, the pinned black and `openspec validate <change-id> --strict` before archiving.
+    - "Before writing tasks, run `git fetch upstream` and confirm the problem still exists on upstream/main."
 
 operations:
   apply:
