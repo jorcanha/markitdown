@@ -16,6 +16,7 @@ Living document: any agent (or person) that learns something relevant about this
 - Upstream history is merged into `main` (merge with `--allow-unrelated-histories`), so `git log` shows
   Microsoft's original commits and new upstream changes can be merged.
 - Roadmap and status: [`PLAN.md`](PLAN.md).
+- Other coding agents start from [`AGENTS.md`](AGENTS.md), which points here.
 
 ## License and authorship rules (mandatory)
 
@@ -105,11 +106,15 @@ $env:GITHUB_ACTIONS = "1"           # skips tests that need the network
   through the Python API instead of spawning the CLI per file.
 - Network tests (YouTube, remote Wikipedia…) are skipped when `GITHUB_ACTIONS` is set (see `skip_remote` in `tests/test_module_vectors.py`).
 - Shells: the Bash tool is Git Bash (`/c/Users/...`); PowerShell 7 is the owner's main shell — verify CLI behavior there.
-- **Windows baseline (2026-11-13, upstream `ed17895`, `GITHUB_ACTIONS=1`)**: 1132 passed, 49 skipped, **4 failed**.
-  The 4 failures are one CLI defect: stdout that is redirected or piped is written in the ANSI code page (cp1252) with
-  `?` replacements instead of UTF-8 (`test_cli_vectors.py::test_output_to_stdout` and
-  `::test_input_from_stdin_without_hints` for `test_mskanji.csv` and `json_late_non_ascii.json`). Upstream CI hides it by
-  exporting `PYTHONUTF8=1`. Tracked by `mk001-windows-test-fixes`. Until then use `-o <file>`, which is always UTF-8.
+- **Windows baseline (after `mk001`, upstream `ed17895`, `GITHUB_ACTIONS=1`)**: 1140 passed, 49 skipped, 0 failed —
+  without `PYTHONUTF8`. Upstream CI exports `PYTHONUTF8=1`; the fork's suite must stay green without it.
+- **CLI output encoding**: a redirected or piped stdout is UTF-8 (unless `PYTHONIOENCODING` is set, which wins).
+  `markitdown <file> -o <out.md>` is UTF-8 in every shell and is the recommended form: Windows PowerShell 5.1 (`>`)
+  and PowerShell pipelines into cmdlets or variables re-encode a native command's output and can still corrupt
+  non-ASCII text, which the CLI cannot prevent.
+- **Agent sessions may export `PYTHONIOENCODING`** (seen in a Claude Code session as `utf-8:surrogateescape`; not set at user or machine level). It makes the CLI
+  child processes in tests write UTF-8 while the old tests decode cp1252, so a baseline run shows 10 failures instead of
+  the real 4, and it disables the stdout fix on purpose. Before running the suite: `Remove-Item Env:PYTHONIOENCODING`.
 - Other packages on Windows: `markitdown-ocr` 108 passed, `markitdown-mcp` 21 passed, `markitdown-sample-plugin` 2 passed.
 - Coverage (in process): 89 % overall; `converters/_pdf_converter.py` 66 %, `__main__.py` 74 %.
 
@@ -200,3 +205,7 @@ items in `PLAN.md` are done:
   from a stale clone. Upstream had already fixed most review findings (piped stdin on Windows, portable tests, UNC file
   URIs, CSV escaping, `mcp` SDK 2.x, Docker base image, pydub warning…). Still open: redirected stdout is not UTF-8 —
   `mk001` was reduced to that — plus the hardening items in `PLAN.md`. Rule added: fetch upstream before any review.
+- 2026-11-13 (`mk001-windows-test-fixes`): the CLI writes UTF-8 to a stdout that is not a terminal (an explicit
+  `PYTHONIOENCODING` wins), fixing silent character loss with `>` and `|` on Windows; the suite is green on Windows
+  without `PYTHONUTF8`. Change confined to `__main__.py::_handle_output`. Linux verification: see
+  `linux-verification-results.md` in the archived change folder.

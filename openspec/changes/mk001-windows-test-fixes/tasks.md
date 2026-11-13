@@ -167,7 +167,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 4. Manual verification (PowerShell 7)
 
-- [ ] 4.1 Redirect and `-o` give the same UTF-8 text:
+- [x] 4.1 Redirect and `-o` give the same UTF-8 text:
 
       ```powershell
       $t = Join-Path $env:TEMP "mk001"; New-Item -ItemType Directory -Force $t | Out-Null
@@ -183,7 +183,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 5. Documentation
 
-- [ ] 5.1 `CLAUDE.md:108-112` — replace the whole "Windows baseline" bullet (five lines, from
+- [x] 5.1 `CLAUDE.md:108-112` — replace the whole "Windows baseline" bullet (five lines, from
       `- **Windows baseline (2026-11-13, upstream` to `which is always UTF-8.`) with:
 
       ```markdown
@@ -195,10 +195,10 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
         non-ASCII text, which the CLI cannot prevent.
       ```
 
-- [ ] 5.2 `CLAUDE.md`, section "What this repo is" — after its last bullet (line 18) add:
+- [x] 5.2 `CLAUDE.md`, section "What this repo is" — after its last bullet (line 18) add:
       `- Other coding agents start from [`AGENTS.md`](AGENTS.md), which points here.`
 
-- [ ] 5.3 `CLAUDE.md`, section "Decision log" (last section) — append:
+- [x] 5.3 `CLAUDE.md`, section "Decision log" (last section) — append:
 
       ```markdown
       - 2026-11-13 (`mk001-windows-test-fixes`): the CLI writes UTF-8 to a stdout that is not a terminal (an explicit
@@ -207,7 +207,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
         `linux-verification-results.md` in the archived change folder.
       ```
 
-- [ ] 5.4 Commit `docs(mk001-windows-test-fixes): update baseline and CLI notes` and push.
+- [x] 5.4 Commit `docs(mk001-windows-test-fixes): update baseline and CLI notes` and push.
 
 ## 6. Local final verification
 
