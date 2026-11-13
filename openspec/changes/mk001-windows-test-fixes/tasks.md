@@ -8,20 +8,20 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 1. Preparation
 
-- [ ] 1.1 `git fetch upstream` and confirm `packages/markitdown/src/markitdown/__main__.py` on `upstream/main` still has
+- [x] 1.1 `git fetch upstream` and confirm `packages/markitdown/src/markitdown/__main__.py` on `upstream/main` still has
       `encoding = sys.stdout.encoding or "utf-8"` with no `reconfigure` (the defect is not fixed upstream).
-- [ ] 1.2 Baseline: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q -p no:cacheprovider`
+- [x] 1.2 Baseline: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q -p no:cacheprovider`
       → expected `4 failed, 1132 passed, 49 skipped`.
 
 ## 2. Tests first (red phase)
 
-- [ ] 2.1 `packages/markitdown/tests/test_cli_vectors.py:6` — delete the line `import locale`.
-- [ ] 2.2 `packages/markitdown/tests/test_cli_vectors.py:55-56` (`test_output_to_stdout`) — after `text=True,` add the
+- [x] 2.1 `packages/markitdown/tests/test_cli_vectors.py:6` — delete the line `import locale`.
+- [x] 2.2 `packages/markitdown/tests/test_cli_vectors.py:55-56` (`test_output_to_stdout`) — after `text=True,` add the
       line `encoding="utf-8",` (design D2).
-- [ ] 2.3 `packages/markitdown/tests/test_cli_vectors.py:118` and `:150` — replace
+- [x] 2.3 `packages/markitdown/tests/test_cli_vectors.py:118` and `:150` — replace
       `result.stdout.decode(locale.getpreferredencoding()).replace("\r\n", "\n")` with
       `result.stdout.decode("utf-8").replace("\r\n", "\n")` (design D2).
-- [ ] 2.4 `packages/markitdown/tests/test_cli_misc.py:3` — add `import argparse` above `import io`; `:12-13` — change the
+- [x] 2.4 `packages/markitdown/tests/test_cli_misc.py:3` — add `import argparse` above `import io`; `:12-13` — change the
       imports to:
 
       ```python
@@ -29,7 +29,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
       from markitdown.__main__ import main, _handle_output
       ```
 
-- [ ] 2.5 `packages/markitdown/tests/test_cli_misc.py` — insert after `test_windows_pipe_input_is_buffered_before_conversion`
+- [x] 2.5 `packages/markitdown/tests/test_cli_misc.py` — insert after `test_windows_pipe_input_is_buffered_before_conversion`
       (after line 81, before the comment `# Service flags and endpoints` at line 84) (design D3):
 
       ```python
@@ -111,7 +111,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
       ```
 
-- [ ] 2.6 Red phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py -q -p no:cacheprovider`
+- [x] 2.6 Red phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py -q -p no:cacheprovider`
       → expected `28 failed, 61 passed, 20 skipped`: 13 × `test_output_to_stdout`, 13 × `test_input_from_stdin_without_hints`,
       `test_redirected_stdout_is_utf8_even_with_legacy_locale`, `test_cli_redirected_stdout_is_utf8_without_python_utf8_mode`.
 - [ ] 2.7 Commit `test(mk001-windows-test-fixes): decode CLI stdout as UTF-8 and cover stdout encoding` (body: red until

@@ -3,7 +3,6 @@ import os
 import time
 import pytest
 import subprocess
-import locale
 import sys
 from typing import List
 
@@ -54,6 +53,7 @@ def test_output_to_stdout(shared_tmp_dir, test_vector) -> None:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
     assert result.returncode == 0, f"CLI exited with error: {result.stderr}"
@@ -115,7 +115,7 @@ def test_input_from_stdin_without_hints(shared_tmp_dir, test_vector) -> None:
     )
 
     # Binary capture preserves Windows CRLF; match text-mode capture semantics.
-    stdout = result.stdout.decode(locale.getpreferredencoding()).replace("\r\n", "\n")
+    stdout = result.stdout.decode("utf-8").replace("\r\n", "\n")
     assert (
         result.returncode == 0
     ), f"CLI exited with error: {result.stderr.decode('utf-8')}"
@@ -147,7 +147,7 @@ def test_convert_url(shared_tmp_dir, test_vector):
     )
 
     # Binary capture preserves Windows CRLF; match text-mode capture semantics.
-    stdout = result.stdout.decode(locale.getpreferredencoding()).replace("\r\n", "\n")
+    stdout = result.stdout.decode("utf-8").replace("\r\n", "\n")
     assert result.returncode == 0, f"CLI exited with error: {result.stderr}"
     for test_string in test_vector.must_include:
         assert test_string in stdout
