@@ -1,35 +1,48 @@
 ## ADDED Requirements
 
 ### Requirement: Redirected stdout is UTF-8
-The CLI SHALL encode the converted Markdown written to stdout as UTF-8 whenever stdout is not an interactive terminal (piped or redirected to a file), regardless of the operating system's console code page or locale encoding, and SHALL NOT replace or drop any character of the converted Markdown.
+The CLI SHALL write the converted Markdown to stdout as UTF-8 bytes whenever stdout is not an interactive terminal (piped or redirected) and no `PYTHONIOENCODING` is set, regardless of the operating system's console code page or locale encoding, and SHALL NOT replace or drop any character of the converted Markdown.
 
-#### Scenario: Redirecting a CSV with CJK text on Windows
-- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv > out.md` on Windows with a cp1252 console code page
+#### Scenario: Process output with a legacy locale encoding
+- **WHEN** the CLI prints the Markdown `José | 名前 | → ✓` to a non-terminal stdout whose default encoding is cp1252
+- **THEN** the bytes written decode as UTF-8 to exactly `José | 名前 | → ✓` followed by a newline
+
+#### Scenario: Redirecting to a file from a byte-preserving shell on Windows
+- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv > out.md` in cmd.exe, Git Bash or PowerShell 7.4+ on Windows with ANSI code page 1252
 - **THEN** `out.md` is valid UTF-8 and contains the line `| 名前 | 年齢 | 住所 |`
 
-#### Scenario: Redirecting text with accents and symbols
-- **WHEN** the user runs `markitdown sample.csv > out.md` where `sample.csv` contains `José,Bogotá,→ ✓ €`
-- **THEN** `out.md` is valid UTF-8 and contains `| José | Bogotá | → ✓ € |` with no `?` or U+FFFD replacement characters
-
-#### Scenario: Piping into another process
-- **WHEN** a parent process runs the CLI with stdout captured through a pipe (e.g. `subprocess.run(..., capture_output=True)`)
-- **THEN** the captured bytes decode as UTF-8 without errors
+#### Scenario: Captured by a parent process
+- **WHEN** a parent process runs the CLI on `test_mskanji.csv` with stdout captured through a pipe (`subprocess.run(..., capture_output=True)`)
+- **THEN** the exit status is 0 and the captured bytes decode as UTF-8 to a text containing `| 名前 | 年齢 | 住所 |`
 
 #### Scenario: POSIX behavior unchanged
 - **WHEN** the CLI runs on Linux or macOS with a UTF-8 locale and stdout is redirected
 - **THEN** the bytes written are identical to those produced before this change
 
+### Requirement: Explicit PYTHONIOENCODING is honored
+The CLI SHALL NOT change the stdout encoding when the `PYTHONIOENCODING` environment variable is set to a non-empty value.
+
+#### Scenario: User forces a legacy encoding
+- **WHEN** `PYTHONIOENCODING=cp1252` is set and the CLI prints `José | 名前 | → ✓` to a non-terminal stdout
+- **THEN** the bytes written are the cp1252 encoding of `José | ?? | ? ?` followed by a newline
+
 ### Requirement: Interactive terminal output stays graceful
-When stdout is an interactive terminal, the CLI SHALL keep encoding the output with the terminal's encoding and
-SHALL replace characters that the terminal cannot represent instead of raising an encoding error.
+The CLI SHALL keep the terminal's own encoding when stdout is an interactive terminal and SHALL replace characters that the terminal cannot represent instead of raising an encoding error.
 
 #### Scenario: Terminal that cannot represent a character
-- **WHEN** the CLI prints Markdown containing a character unsupported by the terminal encoding to an interactive terminal
-- **THEN** the CLI exits with status 0 and the unsupported character is shown as a replacement character
+- **WHEN** the CLI prints `José | 名前 | → ✓` to an interactive terminal whose encoding is ASCII
+- **THEN** no exception is raised and the bytes written are `Jos? | ?? | ? ?` followed by a newline
 
 ### Requirement: Output file is UTF-8
-When the `-o/--output` option is given, the CLI SHALL write the converted Markdown to that file encoded as UTF-8.
+The CLI SHALL write the converted Markdown as UTF-8 to the file given with `-o/--output`, independently of the shell, console code page and `PYTHONIOENCODING`.
 
 #### Scenario: Writing CJK text to an output file
-- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv -o out.md`
+- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv -o out.md` in any shell, including Windows PowerShell 5.1
 - **THEN** reading `out.md` as UTF-8 yields a text containing `| 名前 | 年齢 | 住所 |`
+
+### Requirement: Shell re-encoding is documented
+The project documentation SHALL state that shells which re-encode a native command's output (Windows PowerShell 5.1 redirection, PowerShell pipelines into cmdlets or variables) can corrupt non-ASCII Markdown, and SHALL recommend `-o/--output` as the shell-independent way to obtain UTF-8.
+
+#### Scenario: Agent guide covers the limitation
+- **WHEN** a contributor reads the CLI notes in `CLAUDE.md`
+- **THEN** they find the recommendation to use `markitdown <file> -o <out.md>` instead of `>` in PowerShell
