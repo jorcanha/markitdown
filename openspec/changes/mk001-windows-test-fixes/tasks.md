@@ -394,7 +394,7 @@ Do this only after groups 1–6 are pushed. Full step-by-step instructions, expe
 troubleshooting are in [`linux-verification.md`](linux-verification.md) (same folder). The second machine reports only:
 it does not change source, tests or the script.
 
-- [ ] 7.1 Follow steps 0 and 1 of `linux-verification.md`: run `linux-verify.sh` inside
+- [x] 7.1 Follow steps 0 and 1 of `linux-verification.md`: run `linux-verify.sh` inside
       `docker.io/library/python:3.12-slim` and again inside `docker.io/library/python:3.13-slim`.
 
       ```
@@ -404,7 +404,7 @@ it does not change source, tests or the script.
       Expected `RESULT` lines: `PRECONDITION: PASS`, `INSTALL: PASS`, `A: PASS` (no `failed`), `B: PASS` (without the fix
       only `test_redirected_stdout_is_utf8_even_with_legacy_locale` fails), `C: PASS` (identical SHA-256, valid UTF-8),
       `WORKTREE: PASS`; exit status 0. The expectations for B and C come from analysis and were never observed on Linux.
-- [ ] 7.2 Follow steps 2 and 3 of `linux-verification.md`: write `linux-verification-results.md` from the template
+- [x] 7.2 Follow steps 2 and 3 of `linux-verification.md`: write `linux-verification-results.md` from the template
       (verbatim `RESULT` lines for both Python versions, tested commit, deviations, verdict), tick 7.1 and 7.2, commit
       `test(mk001-windows-test-fixes): record Linux verification results` with only those two files, and push to
       `feature/mk001-windows-test-fixes`. Tick both tasks even if a check failed; the verdict line says how it went.
