@@ -147,8 +147,11 @@ self-contained and independent of the host OS and of the agent:
 - Alternative: re-enable GitHub Actions for one run → rejected by the owner (CI stays off for now).
 - Alternative: mount the working tree into the container → rejected: host-dependent (CRLF checkouts on Windows hosts,
   SELinux labels on Linux hosts, slow mounts through the Podman machine).
-- The script could not be executed on the development machine (no container runtime); it was only checked with
-  `bash -n`. The instructions say what to do if a step of the script itself fails.
+- The script cannot run in a container on the development machine, so its mechanics were dry-run in Git Bash against
+  a scratch clone with the prototype applied (only the venv activation path was adapted): PRECONDITION, INSTALL,
+  A (`1140 passed, 49 skipped`) and WORKTREE passed; B reported two failing tests and C different hashes, which is
+  the correct outcome on Windows, where the defect exists. The Linux expectations for B and C remain analysis.
+  The instructions say what to do if a step of the script itself fails.
 
 ## Risks / Trade-offs
 

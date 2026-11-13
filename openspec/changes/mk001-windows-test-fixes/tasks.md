@@ -3,6 +3,7 @@ Line numbers refer to main = af77f03 (upstream ed17895, 0.1.9). If a file moved,
 Paths are relative to the repository root. Commands are PowerShell unless stated otherwise.
 Prototype (applied, measured, reverted): tests only -> 28 failed / 61 passed / 20 skipped in the two CLI test files;
 tests + fix -> full suite 1140 passed / 49 skipped / 0 failed; black 26.10.1 clean on the three touched files.
+linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototype applied (mechanics OK).
 -->
 
 ## 1. Preparation
@@ -182,12 +183,31 @@ tests + fix -> full suite 1140 passed / 49 skipped / 0 failed; black 26.10.1 cle
 
 ## 5. Documentation
 
-- [ ] 5.1 `CLAUDE.md:108-112` — replace the "Windows baseline" bullet with: `1140 passed, 49 skipped, 0 failed` after
-      `mk001`; a redirected or piped stdout is UTF-8 unless `PYTHONIOENCODING` is set; Windows PowerShell 5.1 `>` and
-      PowerShell pipelines into cmdlets/variables re-encode output, so prefer `markitdown <file> -o <out.md>`.
-- [ ] 5.2 `CLAUDE.md`, "Decision log" — append an entry for `mk001` (what was fixed, the `PYTHONIOENCODING` escape hatch,
-      Linux result once group 7 is done).
-- [ ] 5.3 Commit `docs(mk001-windows-test-fixes): update baseline and CLI notes` and push.
+- [ ] 5.1 `CLAUDE.md:108-112` — replace the whole "Windows baseline" bullet (five lines, from
+      `- **Windows baseline (2026-11-13, upstream` to `which is always UTF-8.`) with:
+
+      ```markdown
+      - **Windows baseline (after `mk001`, upstream `ed17895`, `GITHUB_ACTIONS=1`)**: 1140 passed, 49 skipped, 0 failed —
+        without `PYTHONUTF8`. Upstream CI exports `PYTHONUTF8=1`; the fork's suite must stay green without it.
+      - **CLI output encoding**: a redirected or piped stdout is UTF-8 (unless `PYTHONIOENCODING` is set, which wins).
+        `markitdown <file> -o <out.md>` is UTF-8 in every shell and is the recommended form: Windows PowerShell 5.1 (`>`)
+        and PowerShell pipelines into cmdlets or variables re-encode a native command's output and can still corrupt
+        non-ASCII text, which the CLI cannot prevent.
+      ```
+
+- [ ] 5.2 `CLAUDE.md`, section "What this repo is" — after its last bullet (line 18) add:
+      `- Other coding agents start from [`AGENTS.md`](AGENTS.md), which points here.`
+
+- [ ] 5.3 `CLAUDE.md`, section "Decision log" (last section) — append:
+
+      ```markdown
+      - 2026-11-13 (`mk001-windows-test-fixes`): the CLI writes UTF-8 to a stdout that is not a terminal (an explicit
+        `PYTHONIOENCODING` wins), fixing silent character loss with `>` and `|` on Windows; the suite is green on Windows
+        without `PYTHONUTF8`. Change confined to `__main__.py::_handle_output`. Linux verification: see
+        `linux-verification-results.md` in the archived change folder.
+      ```
+
+- [ ] 5.4 Commit `docs(mk001-windows-test-fixes): update baseline and CLI notes` and push.
 
 ## 6. Local final verification
 
@@ -198,24 +218,25 @@ tests + fix -> full suite 1140 passed / 49 skipped / 0 failed; black 26.10.1 cle
 
 ## 7. Linux verification — PENDING, on the second machine (Podman), any agent
 
-Do this only after groups 1–6 are pushed. Report only: do not change source or tests on that machine.
+Do this only after groups 1–6 are pushed. Full step-by-step instructions, expected results, the results template and
+troubleshooting are in [`linux-verification.md`](linux-verification.md) (same folder). The second machine reports only:
+it does not change source, tests or the script.
 
-- [ ] 7.1 Run the script in a container for Python 3.12 and again with `python:3.13-slim` (same command in bash or
-      PowerShell; the container clones the public repo itself, nothing is mounted):
+- [ ] 7.1 Follow steps 0 and 1 of `linux-verification.md`: run `linux-verify.sh` inside
+      `docker.io/library/python:3.12-slim` and again inside `docker.io/library/python:3.13-slim`.
 
       ```
-      podman run --rm docker.io/library/python:3.12-slim bash -c "apt-get update -qq && apt-get install -y -qq git > /dev/null && git clone -q --branch feature/mk001-windows-test-fixes https://github.com/jorcanha/markitdown /work && cd /work && bash openspec/changes/mk001-windows-test-fixes/linux-verify.sh"
+      podman run --rm docker.io/library/python:3.12-slim bash -c "apt-get update -qq && apt-get install -y -qq git > /dev/null && git clone -q --branch feature/mk001-windows-test-fixes https://github.com/jorcanha/markitdown /work && cd /work && bash openspec/changes/mk001-windows-test-fixes/linux-verify.sh" > linux-run-py312.log 2>&1
       ```
 
-      Expected `RESULT` lines: `PRECONDITION: PASS`, `INSTALL: PASS`, `A: PASS` (0 failed), `B: PASS` (without the fix only
-      `test_redirected_stdout_is_utf8_even_with_legacy_locale` fails), `C: PASS` (identical SHA-256, valid UTF-8),
-      `WORKTREE: PASS`. B and C expectations come from analysis; the script was never run on Linux (only `bash -n`).
-      If the script itself breaks (apt, pip, a shell error), record the error text instead of fixing it.
-- [ ] 7.2 In a clone of the repo on that machine, on branch `feature/mk001-windows-test-fixes`, create
-      `openspec/changes/mk001-windows-test-fixes/linux-verification-results.md` with: date, host OS, `podman --version`,
-      image names, the tested commit (printed by the script), and every `RESULT` line plus the pytest summary for both
-      Python versions, and any deviation. Tick 7.1–7.2 here, commit
-      `test(mk001-windows-test-fixes): record Linux verification results` and push.
-- [ ] 7.3 Back on the development machine: pull, read the results. All PASS → tick 5.2's Linux note, mark `PLAN.md:22`
-      as `[x]` and run `/opsx:archive`. Anything else → decide whether the spec scenario or the implementation is wrong
-      before archiving.
+      Expected `RESULT` lines: `PRECONDITION: PASS`, `INSTALL: PASS`, `A: PASS` (no `failed`), `B: PASS` (without the fix
+      only `test_redirected_stdout_is_utf8_even_with_legacy_locale` fails), `C: PASS` (identical SHA-256, valid UTF-8),
+      `WORKTREE: PASS`; exit status 0. The expectations for B and C come from analysis and were never observed on Linux.
+- [ ] 7.2 Follow steps 2 and 3 of `linux-verification.md`: write `linux-verification-results.md` from the template
+      (verbatim `RESULT` lines for both Python versions, tested commit, deviations, verdict), tick 7.1 and 7.2, commit
+      `test(mk001-windows-test-fixes): record Linux verification results` with only those two files, and push to
+      `feature/mk001-windows-test-fixes`. Tick both tasks even if a check failed; the verdict line says how it went.
+- [ ] 7.3 Back on the development machine: `git pull`, read `linux-verification-results.md`. All checks passed on both
+      versions → change `PLAN.md:22` from `- [~]` to `- [x]` and run `/opsx:archive`. Anything else → decide whether the
+      spec scenario ("POSIX behavior unchanged", "Encoding defects are reproducible on any operating system") or the
+      implementation is wrong, fix it on this branch, and repeat group 7 before archiving.
