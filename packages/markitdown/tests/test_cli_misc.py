@@ -1,5 +1,6 @@
 """CLI behavior outside the shared file-vector matrix."""
 
+import argparse
 import io
 import os
 import subprocess
@@ -9,8 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from markitdown import __version__
-from markitdown.__main__ import main
+from markitdown import __version__, DocumentConverterResult
+from markitdown.__main__ import main, _handle_output
 from markitdown.converters._cu_converter import ContentUnderstandingFileType
 
 # CLI behavior
@@ -79,6 +80,104 @@ def test_windows_pipe_input_is_buffered_before_conversion(monkeypatch, capsys) -
 
     captured = capsys.readouterr()
     assert captured.out.strip() == "# Test HTML"
+
+
+# Encoding of Markdown written to stdout
+
+TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), "test_files")
+
+# Accents (representable in cp1252) plus CJK and symbols (not representable).
+NON_ASCII_MARKDOWN = "José | 名前 | → ✓"
+
+
+class _FakeStdout(io.TextIOWrapper):
+    """An in-memory stdout with a chosen encoding and TTY status."""
+
+    def __init__(self, *, encoding: str, tty: bool) -> None:
+        super().__init__(io.BytesIO(), encoding=encoding, newline="\n")
+        self._tty = tty
+
+    def isatty(self) -> bool:
+        return self._tty
+
+    def written_bytes(self) -> bytes:
+        self.flush()
+        return self.buffer.getvalue()  # type: ignore[attr-defined]
+
+
+def _print_to_fake_stdout(monkeypatch, fake: _FakeStdout) -> bytes:
+    monkeypatch.setattr(sys, "stdout", fake)
+    _handle_output(
+        argparse.Namespace(output=None),
+        DocumentConverterResult(markdown=NON_ASCII_MARKDOWN),
+    )
+    return fake.written_bytes()
+
+
+def test_redirected_stdout_is_utf8_even_with_legacy_locale(monkeypatch) -> None:
+    # Simulates Windows, where a redirected stdout defaults to cp1252.
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    fake = _FakeStdout(encoding="cp1252", tty=False)
+    written = _print_to_fake_stdout(monkeypatch, fake)
+    assert written.decode("utf-8") == NON_ASCII_MARKDOWN + "\n"
+
+
+def test_redirected_stdout_honors_pythonioencoding(monkeypatch) -> None:
+    monkeypatch.setenv("PYTHONIOENCODING", "cp1252")
+    fake = _FakeStdout(encoding="cp1252", tty=False)
+    written = _print_to_fake_stdout(monkeypatch, fake)
+    assert written == "José | ?? | ? ?\n".encode("cp1252")
+
+
+def test_terminal_stdout_replaces_unsupported_characters(monkeypatch) -> None:
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    fake = _FakeStdout(encoding="ascii", tty=True)
+    written = _print_to_fake_stdout(monkeypatch, fake)
+    assert written == b"Jos? | ?? | ? ?\n"
+
+
+def test_replaced_stdout_without_isatty_is_still_written(monkeypatch) -> None:
+    # A host may replace sys.stdout with a minimal object (no isatty, no reconfigure).
+    class MinimalStdout:
+        encoding = "utf-8"
+
+        def __init__(self) -> None:
+            self.parts: list[str] = []
+
+        def write(self, text: str) -> int:
+            self.parts.append(text)
+            return len(text)
+
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    fake = MinimalStdout()
+    monkeypatch.setattr(sys, "stdout", fake)
+    _handle_output(
+        argparse.Namespace(output=None),
+        DocumentConverterResult(markdown=NON_ASCII_MARKDOWN),
+    )
+    assert "".join(fake.parts) == NON_ASCII_MARKDOWN + "\n"
+
+
+def test_cli_redirected_stdout_is_utf8_without_python_utf8_mode() -> None:
+    """End to end: a captured (non-TTY) stdout is UTF-8 with Python's defaults."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("PYTHONIOENCODING", "PYTHONUTF8")
+    }
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "markitdown",
+            os.path.join(TEST_FILES_DIR, "test_mskanji.csv"),
+        ],
+        capture_output=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, f"CLI exited with error: {result.stderr!r}"
+    assert "| 名前 | 年齢 | 住所 |" in result.stdout.decode("utf-8")
 
 
 # Service flags and endpoints

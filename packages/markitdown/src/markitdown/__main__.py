@@ -313,10 +313,25 @@ def _handle_output(args, result: DocumentConverterResult):
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(result.markdown)
     else:
+        # A redirected or piped stdout uses the locale encoding (e.g. cp1252 on
+        # Windows), which silently destroys text outside that code page. Emit
+        # UTF-8 instead, unless the user explicitly asked for another encoding.
+        if _should_force_utf8_stdout():
+            sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
         # Handle stdout encoding errors more gracefully, with fallback for
         # cases where sys.stdout.encoding is None (e.g. redirected streams).
         encoding = sys.stdout.encoding or "utf-8"
         print(result.markdown.encode(encoding, errors="replace").decode(encoding))
+
+
+def _should_force_utf8_stdout() -> bool:
+    """True when stdout is not a terminal and no encoding was explicitly requested."""
+    return (
+        hasattr(sys.stdout, "reconfigure")
+        and not sys.stdout.isatty()
+        and not os.environ.get("PYTHONIOENCODING")
+    )
 
 
 def _exit_with_error(message: str):

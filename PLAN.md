@@ -19,7 +19,7 @@ IDs in parentheses such as (C4) or (S5) refer to findings in
 - [x] Full project review: code, tests, docs, specs, security (`docs/reviews/2026-11-13-project-review.md`).
 - [x] Sync with upstream `ed17895` (`0.1.9`, 122 commits; the fork had started from a stale clone). Section 0 of the
       review lists which findings upstream had already fixed.
-- [~] **`mk001-windows-test-fixes`**: the last 4 failing tests on Windows, all caused by one CLI defect — a redirected
+- [x] **`mk001-windows-test-fixes`**: the last 4 failing Windows tests, all caused by one CLI defect — a redirected
       or piped stdout is not UTF-8 (C2). Includes a Linux verification run in a container on another machine.
 - [ ] Fork notes in `SECURITY.md` / `SUPPORT.md` (they still point to Microsoft) and fork URLs in the other three
       `pyproject.toml` files (D3, D4).
