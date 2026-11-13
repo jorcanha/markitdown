@@ -4,6 +4,10 @@ Audience: any coding agent (or person) on a machine with **Podman** and **git**.
 and you do not need to know the rest of the project. Read `AGENTS.md` at the repository root first for the house rules
 (English only in the repo, branch per change, never push to `main`).
 
+This file, `tasks.md`, `linux-verify.sh` and `AGENTS.md` exist only on branch `feature/mk001-windows-test-fixes`
+until the change is merged. A fresh clone starts on `main`, where none of them is present: check out the branch first
+(Step 0).
+
 ## What this is
 
 The change `mk001-windows-test-fixes` makes the `markitdown` CLI write UTF-8 when its stdout is redirected or piped
@@ -17,17 +21,69 @@ Your job is to run it on Linux and **report** what happens. Tasks: group 7 in `t
 - The only files you create or change are `linux-verification-results.md` and the checkboxes of group 7 in `tasks.md`.
 - Everything you write in the repository is in English.
 
+## Which machine to use
+
+Any machine that can run Linux containers. Nothing is installed on the host except the container runtime and git, and
+the host's operating system does not influence the results: the container clones the repository itself.
+
+| | Needed | Notes |
+|---|---|---|
+| Container runtime | Podman 4 or newer (Podman Desktop is fine) | Docker works too: replace `podman` with `docker` in every command and say so in the results. |
+| Host OS | Linux, macOS or Windows | On macOS and Windows, Podman runs containers in a Linux virtual machine that must be running: `podman machine init` (once) and `podman machine start`. The host needs hardware virtualization enabled. |
+| CPU architecture | x86_64 (amd64) preferred | It is the architecture of the development machine and of upstream CI. arm64 (Apple Silicon, ARM servers) has images too, but the Python dependencies were never installed there by this project: run it as it is, record the architecture, and if `RESULT INSTALL: FAIL` appears, record it and stop. Do not emulate another architecture. |
+| Memory for containers | 4 GB or more | Run `podman info` and read `memTotal` and `cpus` under `host`. A Podman machine created with defaults may have only 2 GB: `podman machine stop`, `podman machine set --memory 4096`, `podman machine start`. With the WSL backend on Windows, memory is managed by WSL and this is not needed. |
+| Free disk | about 3 GB | Two base images, plus the dependencies, which are downloaded once per run. Containers are removed afterwards (`--rm`). |
+| Network | outbound HTTPS | `docker.io` (images), `deb.debian.org` (apt), `github.com` (clone), `pypi.org` and `files.pythonhosted.org` (pip). A proxy or an offline machine will not work without extra setup. |
+| Time | 10–15 minutes per Python version | Estimate. The suite alone takes about 5 minutes on the Windows development machine. |
+| GitHub access on the host | Permission to push to `jorcanha/markitdown`, and a git identity | Only Step 3 needs it. The container needs no credentials: the repository is public. |
+
+The memory, disk and time figures are estimates from the Windows development machine (its virtual environment is
+about 350 MB); they were not measured on Linux. If the machine is smaller, try anyway and record what happened.
+
 ## Step 0 — Preconditions
+
+Container runtime:
 
 ```bash
 podman --version
+podman info                                   # must print host information without an error
+podman run --rm docker.io/library/python:3.12-slim python -c "import platform; print(platform.platform())"
+```
+
+The last command proves that images can be pulled and containers can run, and prints the kernel and architecture
+(for example `Linux-6.x-x86_64-with-glibc2.41`). Note it for the results file. If it fails, see "If something goes
+wrong" before going on.
+
+Repository:
+
+```bash
 git clone https://github.com/jorcanha/markitdown        # or: git fetch --all, in an existing clone
 cd markitdown
 git checkout feature/mk001-windows-test-fixes && git pull
+git rev-parse HEAD                                      # the commit you are going to test; note it
 grep -n "_should_force_utf8_stdout" packages/markitdown/src/markitdown/__main__.py
+grep -n "Ready to run" openspec/changes/mk001-windows-test-fixes/tasks.md
+grep -n "^- \[ \]" openspec/changes/mk001-windows-test-fixes/tasks.md
 ```
 
-If `grep` prints nothing, the fix has not been implemented and pushed yet (task groups 1–6). **Stop** and tell the owner.
+- If the first `grep` prints nothing, the fix has not been implemented and pushed yet (task groups 1–6). **Stop** and
+  tell the owner.
+- The second `grep` must print one line (group 7 says "Ready to run").
+- The third `grep` must list only tasks 7.1, 7.2 and 7.3. If any task of groups 1–6 is listed, the development
+  machine has not finished: **stop** and tell the owner.
+
+Permission to publish the results (Step 3). Check it now, so that a run is not wasted:
+
+```bash
+git config user.name && git config user.email           # both must print a value
+git push --dry-run origin feature/mk001-windows-test-fixes
+```
+
+`git push --dry-run` sends nothing; it must end with `Everything up-to-date` and without asking for a password or
+printing `denied`. If it fails, sign in first (for example `gh auth login` with the GitHub CLI, or the credential
+manager / SSH key that the machine already uses for GitHub) and set the identity with
+`git config user.name "<name>"` and `git config user.email "<email>"`. If you cannot get push access, run the checks
+anyway, write the results file, and give its content to the owner instead of pushing.
 
 ## Step 1 — Run the checks (two Python versions)
 
@@ -43,12 +99,21 @@ podman run --rm docker.io/library/python:3.13-slim bash -c "apt-get update -qq &
 echo "exit status: $?"
 ```
 
-The two `.log` files are scratch output: do **not** commit them (delete them, or keep them outside the repository).
-Then look at the result lines:
+The two `.log` files are scratch output: do **not** commit them (`*.log` is git-ignored, so `git add` skips them;
+delete them when you are done). Then look at the result lines:
 
 ```bash
 grep -E "^(RESULT|commit:|base |Python|stdout encoding|LANG)|^[a-z_]+\.(csv|json): " linux-run-py312.log linux-run-py313.log
 ```
+
+In PowerShell, where `grep` may not exist:
+
+```powershell
+Select-String -Path linux-run-py31*.log -Pattern '^(RESULT|commit:|base |Python|stdout encoding|LANG)|^[a-z_]+\.(csv|json): '
+```
+
+The `commit:` line of **both** logs must show the commit that `git rev-parse HEAD` printed in Step 0. If it shows a
+different one, the branch moved in between: run `git pull` and repeat Step 1, so that the results describe one commit.
 
 ## What the script checks
 
@@ -84,7 +149,9 @@ from the logs verbatim; do not summarize or "fix" them.
 - Date (UTC):
 - Run by (agent / person):
 - Host OS and architecture:
-- `podman --version`:
+- Container platform (output of the `platform.platform()` command in Step 0):
+- Resources for containers (`cpus` and `memTotal` from `podman info`):
+- `podman --version` (or `docker --version`):
 - Tested commit (the `commit:` line printed by the script):
 
 ## Python 3.12 (`docker.io/library/python:3.12-slim`)
@@ -133,6 +200,9 @@ Leave task 7.3 unticked: the owner does it on the development machine.
 
 | Problem | What to do |
 |---|---|
+| `podman info` or `podman run` cannot connect | On macOS and Windows the Podman machine is not running: `podman machine start` (after `podman machine init` the first time). On Linux, check that the user can run rootless containers (`podman run --rm docker.io/library/hello-world`). |
+| The run ends with `Killed` or exit status 137 | The container ran out of memory. Give the Podman machine at least 4 GB (see "Which machine to use") and repeat the run. Record that it happened. |
+| `No space left on device` | Free disk space is insufficient. Do not delete images or containers that are not yours; tell the owner how much space is free (`podman system df`) and stop. |
 | `RESULT PRECONDITION: FAIL` | The implementation is not pushed yet. Stop; nothing to record. |
 | `apt-get` or `git clone` fails | Network or registry problem on the host. Retry once; if it persists, record the error text under "Deviations" and stop. |
 | `RESULT INSTALL: FAIL` | Record the last 30 lines of the log. Do not try other package versions. |
