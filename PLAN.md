@@ -17,18 +17,20 @@ IDs in parentheses such as (C4) or (S5) refer to findings in
 - [x] Initialize OpenSpec with project rules (`mkNNN` ids, branch per change, English-only repo content).
 - [x] Disable GitHub Actions for now (`.github/workflows-disabled/`).
 - [x] Full project review: code, tests, docs, specs, security (`docs/reviews/2026-11-13-project-review.md`).
-- [~] **`mk001-windows-test-fixes`**: green test suite on Windows, plus the two CLI defects it uncovered — redirected
-      stdout not UTF-8 (C2) and piped stdin broken (C1).
+- [x] Sync with upstream `ed17895` (`0.1.9`, 122 commits; the fork had started from a stale clone). Section 0 of the
+      review lists which findings upstream had already fixed.
+- [~] **`mk001-windows-test-fixes`**: the last 4 failing tests on Windows, all caused by one CLI defect — a redirected
+      or piped stdout is not UTF-8 (C2). Includes a Linux verification run in a container on another machine.
 - [ ] Fork notes in `SECURITY.md` / `SUPPORT.md` (they still point to Microsoft) and fork URLs in the other three
       `pyproject.toml` files (D3, D4).
-- [ ] Re-enable GitHub Actions once the project is improved: add a Windows job and Python 3.13, run the other packages'
-      tests, and confirm on Linux the behavior that `mk001` could only reason about (T5, T6).
+- [ ] Re-enable GitHub Actions once the project is improved. The upstream workflow (parked in
+      `.github/workflows-disabled/`) already covers Linux, Windows, Windows ARM and the OCR package.
 - [ ] Keep GitHub's Dependabot **alerts** on (repository setting; uses no Actions minutes) (S10).
 
 ## Phase 1 — Understand and measure (no behavior change)
 
 - [ ] Gather a representative set of test PDFs from real use (prose, tables, scanned, multi-column) — outside the repo if private.
-- [ ] `scripts/benchmark_tokens.py`: convert a folder **in one process** (CLI start-up is ~2.7 s per call, C9) and report
+- [ ] `scripts/benchmark_tokens.py`: convert a folder **in one process** (CLI start-up is ~2.8 s per call, C9) and report
       per file: PDF size, output characters, approx. tokens and time. Optional: exact counts via Anthropic's token
       counting API. Also measure whether CRLF line endings in Windows output change the token count.
 - [ ] Golden-output (characterization) tests for `converters/_pdf_converter.py`, currently at 66 % coverage with no
@@ -43,12 +45,13 @@ Small, mostly opt-out-able changes that make the tool safe for private documents
 - [ ] **Audio transcription opt-in**: converting audio/video must not upload it to Google unless explicitly requested
       (flag and keyword argument; default off) (S6).
 - [ ] **Resource limits**: ZIP member count, expanded size and nesting depth; HTTP timeout and maximum download size (S5, C10).
-- [ ] **`file:` URIs on Windows**: reject UNC targets (S4).
-- [ ] CLI error messages to stderr (C3); silence the `pydub` warning when `ffmpeg` is absent (C12).
+- [ ] CLI error messages to stderr (C3).
 - [ ] Use `defusedxml` in `converter_utils/docx/pre_process.py` (S7).
-- [ ] Make `MarkItDown.convert_stream()` detect non-rewindable streams reliably on Windows (library side of C1).
-- [ ] Correctness fixes: CSV cell escaping (C4), literal `None` on charset-detection failure (C5), RSS title/unbound
-      variable (C6), `print()` in the YouTube converter (C7), exiftool output decoding (C14).
+- [ ] Make `MarkItDown.convert_stream()` detect non-rewindable streams reliably on Windows (the CLI already buffers
+      stdin; this is for callers of the Python API).
+- [ ] Replace `print()` diagnostics in the YouTube converter with warnings (C7).
+- Done by the upstream sync: UNC `file:` URIs rejected (S4), `pydub` warning (C12), CSV escaping (C4), literal `None`
+  (C5), RSS title (C6), exiftool decoding (C14).
 
 ## Phase 3 — PDF improvements (opt-in, with tests)
 
@@ -69,16 +72,16 @@ Ordered by impact/effort for saving tokens and improving LLM comprehension:
 
 - [ ] Batch conversion of a folder: `markitdown-batch <folder> -o <output>` (recursive, skip already converted, error
       log), implemented in process, not by spawning the CLI per file (C9).
-- [ ] **MCP hardening — prerequisite for the next item**: upgrade `mcp` past the known advisories (S3); restrict the tool
-      to an allow-listed root directory; no `http(s):` by default; size limits; no `debug=True`; do not block the event
-      loop; add tests (the package has none) (S1, C11, T5).
+- [ ] **MCP hardening — prerequisite for the next item**: restrict the tool to an allow-listed root directory; no
+      `http(s):` by default; size limits; no `debug=True`; do not block the event loop (S1, C11). The `mcp` advisories
+      (S3) and the missing tests (T5) were resolved by the upstream sync.
 - [ ] Configure `markitdown-mcp` in Claude Code / Claude Desktop and document it here.
 - [ ] Optional "compact" mode applying all Phase 3 cleanups at once (`--compact`).
 - [ ] If image description or OCR through Claude is wanted: adapter for the OpenAI-shaped `llm_client` (C13).
 
 ## Phase 5 — Maintenance
 
-- [ ] Periodically sync with `upstream/main` and record relevant conflicts in `CLAUDE.md`.
-- [ ] Consider proposing generic fixes upstream (the two CLI fixes from `mk001` are good candidates). Security-relevant
-      items (S4, S5) go through the process in `SECURITY.md`, not public issues. Only on the owner's explicit request.
-- [ ] `markitdown-ocr`: investigate the failing `test_pdf_multipage` (T5).
+- [ ] Sync with `upstream/main` regularly — and always before a review or a new change (last sync: 2026-11-13,
+      `ed17895`). Record relevant conflicts in `CLAUDE.md`.
+- [ ] Consider proposing generic fixes upstream (the stdout fix from `mk001` is a candidate: upstream works around it
+      with `PYTHONUTF8=1` in CI). Only on the owner's explicit request.
