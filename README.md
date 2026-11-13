@@ -1,13 +1,13 @@
-> **Fork personal de [microsoft/markitdown](https://github.com/microsoft/markitdown)** mantenido por Jorge Cañas.
-> El código original es © Microsoft Corporation (licencia MIT); las modificaciones de este fork también se publican bajo MIT.
-> Parte del trabajo de este fork se realiza con la ayuda de [Claude Code](https://claude.com/claude-code).
-> Este proyecto no está afiliado ni respaldado por Microsoft.
+> **Personal fork of [microsoft/markitdown](https://github.com/microsoft/markitdown)** maintained by Jorge Cañas.
+> The original code is © Microsoft Corporation (MIT License); this fork's modifications are also released under MIT.
+> Part of the work on this fork is done with [Claude Code](https://claude.com/claude-code).
+> This project is not affiliated with or endorsed by Microsoft.
 >
-> - Objetivo del fork: adaptar MarkItDown a mis necesidades (sobre todo PDF → Markdown para reducir tokens al procesar documentos con LLMs), entender su funcionamiento y mejorarlo.
-> - Notas para agentes / contribuidores: ver [`CLAUDE.md`](CLAUDE.md). Plan de trabajo: ver [`PLAN.md`](PLAN.md).
-> - Instalación desde este fork: `pip install -e "packages/markitdown[all]"` tras clonar `https://github.com/jorcanha/markitdown`.
+> - Fork goal: adapt MarkItDown to my needs (mainly PDF → Markdown to reduce tokens when processing documents with LLMs), understand how it works and improve it.
+> - Notes for agents / contributors: see [`CLAUDE.md`](CLAUDE.md). Roadmap: see [`PLAN.md`](PLAN.md). Changes are spec-driven with [OpenSpec](https://github.com/Fission-AI/OpenSpec) (`openspec/`).
+> - Install from this fork: clone `https://github.com/jorcanha/markitdown` and run `pip install -e "packages/markitdown[all]"`.
 >
-> El resto de este README es el original de upstream.
+> The rest of this README is the original upstream README.
 
 ---
 

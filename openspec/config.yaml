@@ -1,0 +1,54 @@
+schema: spec-driven
+
+context: |
+  Project: personal fork of microsoft/markitdown (MIT) — converts documents (mainly PDF)
+  to Markdown so LLMs such as Claude can process them with fewer tokens.
+  Stack: Python 3.10+ (dev on 3.13, Windows 11), hatchling packaging, uv for envs,
+  pytest for tests, black for formatting. Monorepo under packages/ (markitdown,
+  markitdown-mcp, markitdown-ocr, markitdown-sample-plugin). See CLAUDE.md.
+
+  Language rule: the owner may write prompts in Spanish or English. ALL artifacts
+  (proposal, design, specs, tasks), code, comments, docstrings, identifiers, tests and
+  commit messages are written in English, regardless of the prompt language.
+
+  Change id rule: every change id is "mkNNN-<kebab-case-name>", where NNN is the next
+  zero-padded sequence number (check openspec/changes/ and openspec/changes/archive/
+  for the highest existing mkNNN). Example: mk001-pdf-noise-cleanup.
+
+  Branch-per-change rule: each change runs on its own branch "feature/<change-id>",
+  created from an up-to-date main BEFORE /opsx:propose. Artifacts and implementation
+  commits land on that branch. /opsx:archive syncs specs, archives the change, then
+  opens a PR feature/<change-id> -> main on the fork (jorcanha/markitdown, never
+  microsoft/markitdown) and merges it.
+
+  Commits: Conventional Commits with the change id as scope, e.g.
+  "feat(mk001-pdf-noise-cleanup): strip repeated page headers".
+
+  Upstream compatibility: prefer opt-in behavior (new flags/parameters whose defaults
+  keep upstream behavior) to keep future merges from upstream easy. Never remove
+  Microsoft copyright notices; new files may carry the fork maintainer's SPDX header.
+
+rules:
+  proposal:
+    - Write in English.
+    - Include a "Non-goals" section to keep scope explicit.
+    - State the expected impact on output size/token count when the change touches conversion output.
+  design:
+    - Name every module, class and function that changes (e.g. converters/_pdf_converter.py::PdfConverter.convert).
+    - State whether the behavior is opt-in and which flag/parameter controls it (CLI and Python API).
+  specs:
+    - Scenarios must use concrete inputs and expected Markdown output where possible.
+  tasks:
+    - Each task lists the exact file paths it touches.
+    - Every behavior change includes a test task under packages/markitdown/tests/.
+    - Include a final task to run the test suite and black before archiving.
+
+operations:
+  apply:
+    guidance:
+      - Work only on branch feature/<change-id>; never commit to main directly.
+      - Run tests with the .venv activated (see CLAUDE.md for known Windows-only failures).
+  archive:
+    guidance:
+      - Open the PR against jorcanha/markitdown main and merge it after archiving.
+      - Update PLAN.md checkboxes and the decision log in CLAUDE.md if relevant.
