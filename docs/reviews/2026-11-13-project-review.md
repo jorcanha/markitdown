@@ -11,6 +11,58 @@ Full review of the fork at `main` = `ab7f71e` (upstream `a51f725`, version `0.1.
 
 Nothing here was run on Linux: CI is disabled and the machine has neither WSL nor Docker.
 
+## 0. Status after the upstream sync (same day)
+
+**Read this first.** The fork had been created from a clone that was 122 commits behind upstream, so sections 1–7
+describe an old snapshot (`a51f725`, May 2026). After merging upstream `ed17895` (version `0.1.9`) every finding was
+checked again on Windows. Lesson recorded in `CLAUDE.md`: fetch upstream before reviewing.
+
+New baseline on Windows: **1132 passed, 49 skipped, 4 failed** (was 138 / 33 / 41); `markitdown-ocr` 108 passed,
+`markitdown-mcp` 21 passed, `markitdown-sample-plugin` 2 passed; `pip-audit` reports no known vulnerabilities in the
+packages installed for the four packages; coverage 89 % overall.
+
+| Finding | Status after sync | How re-checked |
+|---|---|---|
+| C1 piped stdin broken on Windows | **Fixed upstream** (`bebea8b`, same approach: buffer stdin in the CLI) | run |
+| C2 redirected stdout not UTF-8 | **Open** — the only cause of the 4 remaining failures; upstream CI masks it with `PYTHONUTF8=1` | run |
+| C3 CLI errors on stdout | Open | read |
+| C4 CSV cells not escaped | Fixed upstream | run |
+| C5 literal `None` for undecodable input | Fixed upstream | run |
+| C6 RSS title / unbound variable | Fixed upstream | run |
+| C7 `print()` in the YouTube converter | Open (3 calls) | read |
+| C8 PDF converter: dead code, double parse, no structure | Open — file unchanged upstream | read |
+| C9 CLI start-up about 2.8 s | Open | run |
+| C10 no HTTP timeout, unbounded reads | Open (unused `mammoth` import removed) | read |
+| C11 MCP tool blocks the event loop | Open | read |
+| C12 `pydub` warning on every start | Fixed upstream | run |
+| C13 OpenAI-shaped LLM client | Unchanged (by design) | read |
+| C14 exiftool JSON decoding | Fixed upstream | read |
+| T1 41 failures on Windows | Fixed upstream except the 4 caused by C2 | run |
+| T2 stdin test did not use stdin | Fixed upstream | read |
+| T3 coverage | 89 % overall; `_pdf_converter.py` still 66 %, `__main__.py` 74 % | run |
+| T4 no golden-output or size tests | Open | read |
+| T5 other packages untested / failing | Fixed upstream (OCR and MCP suites exist and pass) | run |
+| T6 CI only on Linux, Python ≤ 3.12 | Fixed upstream (Linux 3.10–3.14, Windows, Windows ARM) — but CI is disabled in the fork | read |
+| D2 black pin | Upstream now pins black 26.10.1; `CLAUDE.md` updated | read |
+| D3, D4 Microsoft `SECURITY.md` / `SUPPORT.md`, package URLs | Open | read |
+| S1 MCP tool has no allow-list; `debug=True` in HTTP mode | Open | read |
+| S2 hidden text survives conversion | Open (inherent) | run |
+| S3 `mcp` advisories | Fixed upstream (`mcp>=2.1.1`; 2.3.0 installed, clean audit) | run |
+| S4 UNC paths through `file:` URIs | Fixed upstream (`e99a726`) | run |
+| S5 no ZIP / HTTP resource limits | Open (99 KB ZIP → 100 MB output) | run |
+| S6 audio uploaded to Google by default | Open | read |
+| S7 stdlib `ElementTree` in `pre_process.py` | Open | read |
+| S8 Docker images on Debian 11 | Fixed upstream (`python:3.13-slim-trixie`) | read |
+| S11 PyMuPDF is AGPL | Unchanged | read |
+
+Consequences:
+
+- `mk001-windows-test-fixes` shrank to C2 (UTF-8 for a redirected stdout) and the four tests it breaks. The review of
+  its first draft in section 5 is kept as a record; items about stdin, `sys.executable` and `test_file_uris` are moot.
+- Section 6's practical guidance still holds, except that the MCP dependency itself is no longer vulnerable.
+- New since the sync: an Azure Content Understanding converter (`--use-cu`), opt-in like `--use-docintel`; both send the
+  document to Azure.
+
 ## 1. Summary
 
 - The code base is small (about 4,600 lines in the main package) and easy to follow. The converter contract
