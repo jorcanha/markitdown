@@ -408,7 +408,7 @@ it does not change source, tests or the script.
       (verbatim `RESULT` lines for both Python versions, tested commit, deviations, verdict), tick 7.1 and 7.2, commit
       `test(mk001-windows-test-fixes): record Linux verification results` with only those two files, and push to
       `feature/mk001-windows-test-fixes`. Tick both tasks even if a check failed; the verdict line says how it went.
-- [ ] 7.3 Back on the development machine: `git pull`, read `linux-verification-results.md`. All checks passed on both
+- [x] 7.3 Back on the development machine: `git pull`, read `linux-verification-results.md`. All checks passed on both
       versions → change `PLAN.md:22` from `- [~]` to `- [x]` and run `/opsx:archive`. Anything else → decide whether the
       spec scenario ("POSIX behavior unchanged", "Encoding defects are reproducible on any operating system") or the
       implementation is wrong, fix it on this branch, and repeat group 7 before archiving.
