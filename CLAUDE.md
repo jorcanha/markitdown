@@ -1,91 +1,154 @@
-# CLAUDE.md — Guía para agentes
+# CLAUDE.md — Agent guide
 
-Documento vivo: cualquier agente (o persona) que aprenda algo relevante sobre el proyecto debe añadirlo aquí.
-Idioma de trabajo con el propietario: **español**. Código, identificadores y docstrings: **inglés** (como upstream).
+Living document: any agent (or person) that learns something relevant about this project adds it here.
 
-## Qué es este repo
+## Language rule (critical)
 
-- Fork personal de [microsoft/markitdown](https://github.com/microsoft/markitdown) (MIT), en `https://github.com/jorcanha/markitdown`.
-- Objetivo: convertir documentos (sobre todo **PDF**) a Markdown para que un LLM (Claude) los procese gastando menos tokens; adaptar la herramienta a las necesidades del propietario, entenderla y mejorarla.
-- El historial de upstream está fusionado en `main` (merge con `--allow-unrelated-histories`), así que `git log` muestra los commits originales de Microsoft y se pueden traer cambios nuevos.
-- Plan y estado del trabajo: [`PLAN.md`](PLAN.md).
+- The owner may write prompts in **Spanish or English**. Reply in the language of the prompt.
+- Everything committed to the repo is in **English**: code, comments, docstrings, identifiers, tests,
+  commit messages, OpenSpec artifacts (proposal, design, specs, tasks) and docs (this file, `PLAN.md`).
 
-## Reglas de licencia y autoría (obligatorias)
+## What this repo is
 
-- **No eliminar ni modificar** los avisos de copyright de Microsoft (`LICENSE`, cabeceras `SPDX`, `ThirdPartyNotices.md`, `packages/markitdown-ocr/LICENSE`).
-- Archivos **nuevos** del fork pueden llevar: `# SPDX-FileCopyrightText: 2026 Jorge Cañas` + `# SPDX-License-Identifier: MIT`.
-- Archivos **modificados** de upstream: conservar la cabecera original; si se añade una línea, que sea adicional, nunca sustituyendo.
-- No usar marcas/logos de Microsoft de forma que sugiera respaldo oficial.
-- Se puede (y debe) indicar que el trabajo se hace con Claude Code: los commits llevan `Co-Authored-By: Claude ...`.
+- Personal fork of [microsoft/markitdown](https://github.com/microsoft/markitdown) (MIT), at `https://github.com/jorcanha/markitdown`.
+- Goal: convert documents (mainly **PDF**) to Markdown so an LLM (Claude) can process them with fewer tokens;
+  adapt the tool to the owner's needs, understand it and improve it.
+- Upstream history is merged into `main` (merge with `--allow-unrelated-histories`), so `git log` shows
+  Microsoft's original commits and new upstream changes can be merged.
+- Roadmap and status: [`PLAN.md`](PLAN.md).
+
+## License and authorship rules (mandatory)
+
+- **Never remove or alter** Microsoft's copyright notices (`LICENSE`, `SPDX` headers, `ThirdPartyNotices.md`,
+  `packages/markitdown-ocr/LICENSE`).
+- **New** fork files may carry: `# SPDX-FileCopyrightText: 2026 Jorge Cañas` + `# SPDX-License-Identifier: MIT`.
+- **Modified** upstream files: keep the original header; any added line is additional, never a replacement.
+- Do not use Microsoft trademarks/logos in a way that implies official endorsement.
+- It is fine (and expected) to state that work is done with Claude Code: commits carry `Co-Authored-By: Claude ...`.
+
+## Spec-driven development (OpenSpec)
+
+OpenSpec (`@fission-ai/openspec`, installed globally via npm, v1.3.1) drives every feature/change.
+Project config with context and per-artifact rules: [`openspec/config.yaml`](openspec/config.yaml).
+
+| Command | When to use |
+|---|---|
+| `/opsx:explore` | Think through a problem or clarify requirements. Writes nothing — safe on `main`. |
+| `/opsx:propose <change-id>` | Create a change: `proposal.md`, `design.md`, `specs/`, `tasks.md`. |
+| `/opsx:apply` | Implement the tasks of a change. |
+| `/opsx:archive` | Sync delta specs into `openspec/specs/`, archive the change, PR + merge to `main`. |
+
+### Change id convention
+
+`mkNNN-<kebab-case-name>` — `NNN` is the next zero-padded number. Find the highest existing one in
+`openspec/changes/` and `openspec/changes/archive/` (archived folders are `<date>-mkNNN-...`).
+Example: `mk001-pdf-noise-cleanup`. The same id names the branch, the change folder and the commit scope.
+
+### Branch-per-change rule (critical)
+
+Every change lives on its own branch; nothing from a change lands on `main` directly.
+
+1. Pick the `<change-id>` **before** running any OpenSpec command that writes.
+2. `git checkout main && git pull && git checkout -b feature/<change-id>`
+3. `/opsx:propose <change-id>` (always pass the id explicitly) → commit
+   `chore(<change-id>): add openspec artifacts`.
+4. `/opsx:apply` → implementation commits on the same branch, e.g. `feat(<change-id>): ...`,
+   `test(<change-id>): ...`. Push the branch as a safety net.
+5. `/opsx:archive` → archive the change, then
+   `gh pr create --base main --head feature/<change-id>` and `gh pr merge --merge --delete-branch`,
+   then `git checkout main && git pull`.
+
+- `gh` default repo is set to `jorcanha/markitdown` (`gh repo set-default`). **Never open PRs or issues against
+  `microsoft/markitdown`.**
+- Non-spec maintenance (tooling, docs, upstream syncs) uses `chore/<short-name>` branches with the same PR + merge flow.
+- If the scope of a request is unclear, ask clarifying questions before `/opsx:propose`.
 
 ## Git
 
-- Remotos: `origin` = fork del propietario (push aquí). `upstream` = `https://github.com/microsoft/markitdown.git` (solo lectura).
-- Sincronizar con upstream: `git fetch upstream && git merge upstream/main` (resolver conflictos respetando los cambios del fork).
-- Hay un clon local de upstream (sin tocar) en `C:\Users\jorge\Documents\github\_markdown\markitdown` — sirve de referencia; **no editarlo**.
-- Mensajes de commit: en inglés o español, imperativos y concisos. Cambios grandes en rama propia + PR hacia `main`.
+- Remotes: `origin` = owner's fork (push here). `upstream` = `https://github.com/microsoft/markitdown.git` (read-only).
+- Sync with upstream on a `chore/upstream-sync-<date>` branch: `git fetch upstream && git merge upstream/main`.
+- A pristine local clone of upstream lives at `C:\Users\jorge\Documents\github\_markdown\markitdown` — reference only, **do not edit**.
 
-## Entorno de desarrollo (Windows 11, Python 3.13, uv)
+## CI (GitHub Actions) — disabled for now
+
+- Upstream workflows were moved from `.github/workflows/` to `.github/workflows-disabled/` (`tests.yml`, `pre-commit.yml`),
+  so GitHub does not run them. To re-enable: `git mv .github/workflows-disabled .github/workflows`
+  (fix the Windows test issues below first, and consider adding a Windows job).
+- `.github/dependabot.yml` only watches GitHub Actions versions; with no active workflows it has nothing to update.
+
+## Development environment (Windows 11, Python 3.13, uv)
 
 ```powershell
 uv venv --python 3.13 .venv
 uv pip install --python .venv -e "packages/markitdown[all]" pytest openai
-.venv\Scripts\python -m pytest packages/markitdown/tests -q
-.venv\Scripts\markitdown archivo.pdf -o salida.md
+.venv\Scripts\Activate.ps1          # needed: CLI tests spawn "python"
+python -m pytest packages/markitdown/tests -q
+markitdown file.pdf -o output.md
 ```
 
-- Upstream usa `hatch` (`cd packages/markitdown && hatch test`); con uv + pytest funciona igual.
-- Formato: `black` (ver `.pre-commit-config.yaml`). Ejecutar `pre-commit run --all-files` o `black packages/` antes de commitear.
-- Tests que requieren red (YouTube, Wikipedia remota…) se saltan con la variable `GITHUB_ACTIONS` definida (ver `skip_remote` en `tests/test_module_vectors.py`).
-- **Línea base en Windows (2026-11-13, `GITHUB_ACTIONS=1`)**: 138 passed, 33 skipped, 41 failed. Los 41 fallos son del entorno, no del código:
-  - 40 tests de CLI (`test_cli_*.py`) ejecutan `subprocess.run(["python", "-m", "markitdown", ...])`; en Windows `python` se resuelve al Python **base** (el `python.exe` del venv es un lanzador), que no tiene el paquete → "No module named markitdown". Arreglo pendiente: usar `sys.executable` en los tests.
-  - `test_module_misc.py::test_file_uris` espera rutas POSIX (`/path/to/file.txt`) y en Windows obtiene `C:\path\to\file.txt`.
-  - Sin `GITHUB_ACTIONS` además fallan tests de red y `test_speech_transcription` (requiere `ffmpeg`).
-- Rutas: la herramienta Bash es Git Bash (`/c/Users/...`); PowerShell también está disponible.
+- Upstream uses `hatch` (`cd packages/markitdown && hatch test`); uv + pytest works the same.
+- Formatting: `black` (see `.pre-commit-config.yaml`). Run `pre-commit run --all-files` or `black packages/` before committing.
+- Network tests (YouTube, remote Wikipedia…) are skipped when `GITHUB_ACTIONS` is set (see `skip_remote` in `tests/test_module_vectors.py`).
+- Shells: the Bash tool is Git Bash (`/c/Users/...`); PowerShell is also available.
+- **Windows baseline (2026-11-13, `GITHUB_ACTIONS=1`)**: 138 passed, 33 skipped, 41 failed. The 41 failures are environmental:
+  - 40 CLI tests (`test_cli_*.py`) run `subprocess.run(["python", "-m", "markitdown", ...])`; on Windows `python` resolves to the
+    **base** interpreter (the venv `python.exe` is a launcher), which lacks the package → "No module named markitdown".
+    Pending fix: use `sys.executable` in the tests.
+  - `test_module_misc.py::test_file_uris` expects POSIX paths (`/path/to/file.txt`) but gets `C:\path\to\file.txt` on Windows.
+  - Without `GITHUB_ACTIONS`, network tests and `test_speech_transcription` (needs `ffmpeg`) also fail.
 
-## Arquitectura (paquete `packages/markitdown/src/markitdown/`)
+## Architecture (`packages/markitdown/src/markitdown/`)
 
-Monorepo con 4 paquetes en `packages/`:
+Monorepo with 4 packages in `packages/`:
 
-| Paquete | Qué hace |
+| Package | Purpose |
 |---|---|
-| `markitdown` | Librería + CLI principal. |
-| `markitdown-mcp` | Servidor MCP con una sola tool `convert_to_markdown(uri)` (STDIO / HTTP / SSE). Útil para conectar a Claude. |
-| `markitdown-ocr` | Plugin: OCR de imágenes embebidas (PDF/DOCX/PPTX/XLSX) usando un LLM con visión (`llm_client`). Se registra con prioridad `-1.0` para reemplazar a los conversores built-in. |
-| `markitdown-sample-plugin` | Ejemplo de plugin (RTF). Plantilla para crear plugins propios. |
+| `markitdown` | Main library + CLI. |
+| `markitdown-mcp` | MCP server with a single tool `convert_to_markdown(uri)` (STDIO / HTTP / SSE). Useful to plug into Claude. |
+| `markitdown-ocr` | Plugin: OCR of embedded images (PDF/DOCX/PPTX/XLSX) via a vision LLM (`llm_client`). Registers at priority `-1.0` to replace built-in converters. |
+| `markitdown-sample-plugin` | Example plugin (RTF). Template for custom plugins. |
 
-Flujo de conversión (`_markitdown.py`):
+Conversion flow (`_markitdown.py`):
 
-1. `MarkItDown.convert(source)` despacha según el tipo: `convert_local` (ruta), `convert_uri` (`http/https/file/data:`), `convert_response`, `convert_stream`.
-2. `_get_stream_info_guesses()` construye candidatos `StreamInfo` (mimetype, extensión, charset) combinando extensión + **magika** (detección por contenido) + `charset_normalizer`.
-3. `_convert()` recorre cada guess × cada conversor ordenado por `priority` (menor = primero; específicos `0.0`, genéricos `10.0`). El primero cuyo `accepts()` sea True y cuyo `convert()` no falle gana.
-4. Normalización final: `rstrip` por línea y colapsar 3+ saltos de línea a 2.
+1. `MarkItDown.convert(source)` dispatches by type: `convert_local` (path), `convert_uri` (`http/https/file/data:`), `convert_response`, `convert_stream`.
+2. `_get_stream_info_guesses()` builds `StreamInfo` candidates (mimetype, extension, charset) from the extension + **magika** (content sniffing) + `charset_normalizer`.
+3. `_convert()` iterates every guess × every converter sorted by `priority` (lower runs first; specific formats `0.0`, generic `10.0`).
+   The first converter whose `accepts()` is True and whose `convert()` does not raise wins.
+4. Final normalization: `rstrip` each line and collapse 3+ newlines into 2.
 
-- Contrato de conversor: `DocumentConverter.accepts(stream, info, **kw)` **no debe mover** la posición del stream (hay `assert`); `convert()` devuelve `DocumentConverterResult(markdown, title)`.
-- Los conversores viven en `converters/`; se registran en `MarkItDown.enable_builtins()` (el último registrado con igual prioridad se prueba primero).
-- Dependencias opcionales por formato (`[pdf]`, `[docx]`…); si faltan, el conversor lanza `MissingDependencyException` al convertir.
-- Plugins: entry point `markitdown.plugin` con función `register_converters(markitdown, **kwargs)`; solo se activan con `enable_plugins=True` / `--use-plugins`.
+- Converter contract: `DocumentConverter.accepts(stream, info, **kw)` **must not move** the stream position (asserted);
+  `convert()` returns `DocumentConverterResult(markdown, title)`.
+- Converters live in `converters/` and are registered in `MarkItDown.enable_builtins()` (with equal priority, the last registered is tried first).
+- Optional dependencies per format (`[pdf]`, `[docx]`…); if missing, the converter raises `MissingDependencyException` on convert.
+- Plugins: entry point group `markitdown.plugin` exposing `register_converters(markitdown, **kwargs)`; only active with
+  `enable_plugins=True` / `--use-plugins`.
 
-### Conversor PDF (`converters/_pdf_converter.py`) — el más relevante para este fork
+### PDF converter (`converters/_pdf_converter.py`) — the most relevant one for this fork
 
-- Usa **pdfplumber** página a página: `_extract_form_content_from_words()` intenta detectar tablas/formularios sin bordes por posición de palabras; si la página no parece formulario usa `page.extract_text()`.
-- Si **ninguna** página es formulario, descarta lo anterior y re-extrae todo con **pdfminer** (`extract_text`) → mejor espaciado en prosa, pero el PDF se parsea dos veces.
-- Post-proceso: `_merge_partial_numbering_lines` (numeración estilo MasterFormat `.1`, `.2`).
-- Limitaciones conocidas (oportunidades de mejora, ver `PLAN.md`):
-  - Salida mayormente **texto plano**: no detecta encabezados (`#`), negritas ni listas.
-  - No elimina encabezados/pies de página repetidos ni números de página → tokens desperdiciados.
-  - No une palabras cortadas por guion al final de línea ni párrafos partidos por saltos de línea.
-  - No inserta marcadores de página (útiles para citar "pág. N").
-  - PDFs escaneados → salida vacía salvo plugin OCR (requiere LLM con visión, cuesta tokens) o Azure Document Intelligence.
-  - `_extract_tables_from_words()` es **código muerto** (no se usa en ningún sitio).
+- Uses **pdfplumber** per page: `_extract_form_content_from_words()` tries to detect borderless tables/forms from word positions;
+  otherwise `page.extract_text()`.
+- If **no** page is a form, it discards that and re-extracts the whole document with **pdfminer** (`extract_text`) → better spacing
+  for prose, but the PDF is parsed twice.
+- Post-processing: `_merge_partial_numbering_lines` (MasterFormat-style `.1`, `.2` numbering).
+- Known limitations (improvement opportunities, see `PLAN.md`):
+  - Output is mostly **plain text**: no headings (`#`), bold or list detection.
+  - Repeated page headers/footers and page numbers are kept → wasted tokens.
+  - End-of-line hyphenation and hard-wrapped paragraphs are not rejoined.
+  - No page markers (useful to cite "page N").
+  - Scanned PDFs → empty output unless the OCR plugin (vision LLM, costs tokens) or Azure Document Intelligence is used.
+  - `_extract_tables_from_words()` is **dead code** (never called).
 
-## Convenciones para cambios
+## Change conventions
 
-- Preferir cambios **opt-in** (parámetros/flags nuevos con valor por defecto que mantenga el comportamiento de upstream) para facilitar merges futuros y no romper tests.
-- Todo cambio de comportamiento debe venir con test en `packages/markitdown/tests/` (ficheros de prueba en `tests/test_files/`).
-- Medir el impacto en tokens: comparar tamaño de salida (caracteres / tokens aproximados ≈ chars/4) antes y después en un PDF de muestra.
-- No subir PDFs personales o confidenciales al repo (es público). Usar `/output/` (ignorado) para pruebas locales.
+- Prefer **opt-in** changes (new flags/parameters whose defaults keep upstream behavior) to ease future upstream merges and keep tests green.
+- Every behavior change ships with a test in `packages/markitdown/tests/` (fixtures in `tests/test_files/`).
+- Measure token impact: compare output size (characters / approx. tokens ≈ chars/4) before and after on a sample PDF.
+- Never commit personal or confidential PDFs (the repo is public). Use `/output/` (git-ignored) for local experiments.
 
-## Registro de decisiones y hallazgos
+## Decision log
 
-- 2026-11-13: Creación del fork a partir del clon local de upstream (commit `a51f725`, versión `0.1.6b2`). LICENSE con doble copyright (Microsoft + Jorge Cañas). README con aviso de fork. `.gitignore` = plantilla Python de GitHub + entradas de upstream + `/output/`.
+- 2026-11-13: Fork created from the local upstream clone (commit `a51f725`, version `0.1.6b2`). LICENSE with dual copyright
+  (Microsoft + Jorge Cañas). README with fork notice. `.gitignore` = GitHub Python template + upstream entries + `/output/`.
+- 2026-11-13: OpenSpec initialized (Claude Code skills/commands in `.claude/`). Change ids `mkNNN-<name>`, branch per change
+  (`feature/<change-id>`), merge to `main` via PR at archive time. All repo content in English. GitHub Actions disabled
+  (workflows moved to `.github/workflows-disabled/`). `gh` default repo pinned to the fork.
