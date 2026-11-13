@@ -27,7 +27,7 @@ The `packages/markitdown` test suite SHALL report zero failures on Windows 11 wi
 
 #### Scenario: Local Windows run
 - **WHEN** the owner runs `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q` on Windows
-- **THEN** the run reports `1140 passed, 49 skipped` and 0 failed
+- **THEN** the run reports `1141 passed, 49 skipped` and 0 failed
 
 ### Requirement: Green suite on Linux
 The `packages/markitdown` test suite SHALL report zero failures in a Linux container (`python:3.12-slim` and `python:3.13-slim`) when network tests are skipped, and the result of that run SHALL be recorded in the change folder before the change is archived.

@@ -71,9 +71,9 @@ the top of the stdout branch of `_handle_output`:
 def _should_force_utf8_stdout() -> bool:
     """True when stdout is not a terminal and no encoding was explicitly requested."""
     return (
-        not sys.stdout.isatty()
+        hasattr(sys.stdout, "reconfigure")
+        and not sys.stdout.isatty()
         and not os.environ.get("PYTHONIOENCODING")
-        and hasattr(sys.stdout, "reconfigure")
     )
 ```
 
@@ -90,7 +90,10 @@ def _should_force_utf8_stdout() -> bool:
 - `reconfigure` keeps the text layer, so newline handling is unchanged (CRLF on Windows, the same as `-o`).
 - **Escape hatch:** an explicit `PYTHONIOENCODING` wins, so a deliberate user setting is never overridden and anyone
   who depended on a legacy code page can keep it. `PYTHONUTF8=1` already yields UTF-8 and needs no special case.
-- `hasattr` keeps the CLI working when a host replaced `sys.stdout` with an object without `reconfigure`.
+- `hasattr` keeps the CLI working when a host replaced `sys.stdout` with an object without `reconfigure`. It is
+  checked first, so such an object is never asked for `isatty` either: the first implementation called `isatty()`
+  before the guard and raised `AttributeError` for an object with `encoding` and `write` only, which works on `main`
+  (found by the review of 2026-11-13, measured with `test_replaced_stdout_without_isatty_is_still_written`).
 - pytest's `capsys` stream (used by upstream's in-process CLI tests) is a UTF-8 `TextIOWrapper`; reconfiguring it to
   UTF-8 is a no-op. The full suite confirms it.
 - Alternative: force UTF-8 on terminals too → rejected: mojibake on POSIX terminals with a non-UTF-8 locale; on Windows
@@ -109,11 +112,14 @@ def _should_force_utf8_stdout() -> bool:
 
 ### D3 — In-process tests reproduce the defect on any OS
 `packages/markitdown/tests/test_cli_misc.py` gets a `_FakeStdout(io.TextIOWrapper)` helper (a `BytesIO` with a chosen
-`encoding` and `isatty()` result) and four tests:
+`encoding` and `isatty()` result) and five tests:
 
 - `test_redirected_stdout_is_utf8_even_with_legacy_locale`: cp1252, not a TTY → bytes decode as UTF-8, text intact.
 - `test_redirected_stdout_honors_pythonioencoding`: `PYTHONIOENCODING=cp1252` → output stays cp1252 with `?`.
 - `test_terminal_stdout_replaces_unsupported_characters`: ascii, TTY → `b"Jos? | ?? | ? ?\n"`, no exception.
+- `test_replaced_stdout_without_isatty_is_still_written`: a minimal stand-in for `sys.stdout` (`encoding` and `write`
+  only) still receives the Markdown. Added by the review; it guards against a regression introduced by the fix
+  itself, so it passes on `main` and is not one of the four tests that check B of the Linux run selects.
 - `test_cli_redirected_stdout_is_utf8_without_python_utf8_mode`: subprocess on `test_mskanji.csv` with
   `PYTHONIOENCODING` and `PYTHONUTF8` removed from the child environment, so it also guards the fix on a CI that
   exports `PYTHONUTF8=1`.

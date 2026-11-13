@@ -136,6 +136,28 @@ def test_terminal_stdout_replaces_unsupported_characters(monkeypatch) -> None:
     assert written == b"Jos? | ?? | ? ?\n"
 
 
+def test_replaced_stdout_without_isatty_is_still_written(monkeypatch) -> None:
+    # A host may replace sys.stdout with a minimal object (no isatty, no reconfigure).
+    class MinimalStdout:
+        encoding = "utf-8"
+
+        def __init__(self) -> None:
+            self.parts: list[str] = []
+
+        def write(self, text: str) -> int:
+            self.parts.append(text)
+            return len(text)
+
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    fake = MinimalStdout()
+    monkeypatch.setattr(sys, "stdout", fake)
+    _handle_output(
+        argparse.Namespace(output=None),
+        DocumentConverterResult(markdown=NON_ASCII_MARKDOWN),
+    )
+    assert "".join(fake.parts) == NON_ASCII_MARKDOWN + "\n"
+
+
 def test_cli_redirected_stdout_is_utf8_without_python_utf8_mode() -> None:
     """End to end: a captured (non-TTY) stdout is UTF-8 with Python's defaults."""
     env = {

@@ -328,9 +328,9 @@ def _handle_output(args, result: DocumentConverterResult):
 def _should_force_utf8_stdout() -> bool:
     """True when stdout is not a terminal and no encoding was explicitly requested."""
     return (
-        not sys.stdout.isatty()
+        hasattr(sys.stdout, "reconfigure")
+        and not sys.stdout.isatty()
         and not os.environ.get("PYTHONIOENCODING")
-        and hasattr(sys.stdout, "reconfigure")
     )
 
 

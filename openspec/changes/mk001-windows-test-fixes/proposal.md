@@ -54,8 +54,8 @@ dropped after the sync.
 - Tests: `packages/markitdown/tests/test_cli_misc.py`, `packages/markitdown/tests/test_cli_vectors.py`.
 - Docs: `CLAUDE.md`, `PLAN.md`, new `AGENTS.md`; verification script and results inside the change folder.
 - Expected suite result on Windows (`GITHUB_ACTIONS=1`): from 1132 passed / 49 skipped / 4 failed to
-  **1140 passed / 49 skipped / 0 failed** (measured with a throw-away prototype of this change; also green with
-  `PYTHONUTF8=1`, the setting upstream CI uses).
+  **1141 passed / 49 skipped / 0 failed** (1140 measured with a throw-away prototype of this change, plus one test
+  added by the review of the implementation; also green with `PYTHONUTF8=1`, the setting upstream CI uses).
 - Output size / tokens: conversion content is unchanged. On Windows, redirected output becomes valid UTF-8 instead of
   lossy cp1252: same number of characters, no information lost. The gain is correctness, not size.
 - Upstream compatibility: 15 added lines in `__main__.py`, no upstream line removed. Behavior on POSIX with a UTF-8

@@ -147,7 +147,7 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
               print(result.markdown.encode(encoding, errors="replace").decode(encoding))
       ```
 
-- [ ] 3.2 `packages/markitdown/src/markitdown/__main__.py` — add before `def _exit_with_error` (line 322), two blank lines
+- [x] 3.2 `packages/markitdown/src/markitdown/__main__.py` — add before `def _exit_with_error` (line 322), two blank lines
       above and below. `os` is already imported (line 5).
 
       ```python
@@ -233,6 +233,10 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
           from `packages/markitdown` → both clean with the prototype.
       (g) Commit `fix(mk001-windows-test-fixes): keep a replaced stdout without isatty working` (code, test and the
           artifact updates of (d) and (e)) and push. Then tick this task.
+
+      **R1 applied on 2026-11-13.** Steps (a)–(g) done as written. Measured afterwards, with `PYTHONIOENCODING` and
+      `PYTHONUTF8` unset: full suite `1141 passed, 49 skipped`, 0 failed; black 26.10.1 and mypy clean; redirect and
+      pipe in Git Bash still valid UTF-8 and equal to `-o` for both sample files.
 
 - [x] 3.3 Green phase: `$env:GITHUB_ACTIONS = "1"; .venv\Scripts\python -m pytest packages/markitdown/tests -q -p no:cacheprovider`
       → expected `1140 passed, 49 skipped`, no `failed`.
