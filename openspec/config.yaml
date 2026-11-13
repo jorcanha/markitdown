@@ -33,21 +33,33 @@ rules:
     - Write in English.
     - Include a "Non-goals" section to keep scope explicit.
     - State the expected impact on output size/token count when the change touches conversion output.
+    - Every claim about current behavior states how it was verified (command executed and result, or "code reading only").
   design:
     - Name every module, class and function that changes (e.g. converters/_pdf_converter.py::PdfConverter.convert).
     - State whether the behavior is opt-in and which flag/parameter controls it (CLI and Python API).
+    - Reproduce the problem before designing the fix and record the evidence (commands, measured numbers) in Context.
+    - When behavior depends on the shell or OS, list what was measured in each (PowerShell 7 is the owner's main shell) and what could not be verified.
+    - For each decision list the alternatives considered and why they were rejected.
   specs:
     - Scenarios must use concrete inputs and expected Markdown output where possible.
+    - The requirement text must be a single line containing SHALL or MUST (OpenSpec only validates the first line).
+    - Do not promise outcomes the program cannot control (e.g. what a shell does with the bytes afterwards).
   tasks:
-    - Each task lists the exact file paths it touches.
-    - Every behavior change includes a test task under packages/markitdown/tests/.
-    - Include a final task to run the test suite and black before archiving.
+    - Each task cites the file and line range of every edit (path:line-line) as of the commit the tasks were written on.
+    - Each task includes the proposed implementation as a before/after code snippet whenever the edit is known in advance.
+    - Each verification task gives the exact command (PowerShell) and the expected result (e.g. the pytest summary line).
+    - Write the tests first and include a task that confirms they fail for the expected reason before the fix.
+    - Every behavior change includes a test task under packages/markitdown/tests/; prefer tests that fail without the fix on every OS.
+    - "Format only touched files with the pinned black: uvx black==23.7.0 <files>. Never reformat untouched upstream files."
+    - Include a final task to run the test suite, the pinned black and `openspec validate <change-id> --strict` before archiving.
 
 operations:
   apply:
     guidance:
       - Work only on branch feature/<change-id>; never commit to main directly.
-      - Run tests with the .venv activated (see CLAUDE.md for known Windows-only failures).
+      - Run tests with the venv interpreter (.venv\Scripts\python -m pytest ...) and GITHUB_ACTIONS=1 to skip network tests.
+      - Line numbers in tasks refer to the commit they were written on; re-locate by the quoted code if the file has moved.
+      - Commit after each task group with a Conventional Commit scoped to the change id, then push the branch.
   archive:
     guidance:
       - Open the PR against jorcanha/markitdown main and merge it after archiving.
