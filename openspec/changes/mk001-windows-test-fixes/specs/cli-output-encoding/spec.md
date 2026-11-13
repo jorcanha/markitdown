@@ -8,16 +8,16 @@ The CLI SHALL write the converted Markdown to stdout as UTF-8 bytes whenever std
 - **THEN** the bytes written decode as UTF-8 to exactly `José | 名前 | → ✓` followed by a newline
 
 #### Scenario: Redirecting to a file from a byte-preserving shell on Windows
-- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv > out.md` in cmd.exe, Git Bash or PowerShell 7.4+ on Windows with ANSI code page 1252
+- **WHEN** the user runs `markitdown tests/test_files/test_mskanji.csv > out.md` in cmd.exe, Git Bash or PowerShell 7.4+ on Windows with ANSI code page 1252 and neither `PYTHONUTF8` nor `PYTHONIOENCODING` set
 - **THEN** `out.md` is valid UTF-8 and contains the line `| 名前 | 年齢 | 住所 |`
 
 #### Scenario: Captured by a parent process
-- **WHEN** a parent process runs the CLI on `test_mskanji.csv` with stdout captured through a pipe (`subprocess.run(..., capture_output=True)`)
-- **THEN** the exit status is 0 and the captured bytes decode as UTF-8 to a text containing `| 名前 | 年齢 | 住所 |`
+- **WHEN** a parent process runs the CLI on `json_late_non_ascii.json` with stdout captured through a pipe and neither `PYTHONUTF8` nor `PYTHONIOENCODING` set
+- **THEN** the exit status is 0 and the captured bytes decode as UTF-8 to a text containing `"notes": "Late Unicode: café, 日本語, 😀"`
 
 #### Scenario: POSIX behavior unchanged
-- **WHEN** the CLI runs on Linux or macOS with a UTF-8 locale and stdout is redirected
-- **THEN** the bytes written are identical to those produced before this change
+- **WHEN** the CLI converts `test_mskanji.csv` on Linux with a UTF-8 locale and stdout redirected to a file
+- **THEN** the file's bytes are identical to those produced by the CLI before this change
 
 ### Requirement: Explicit PYTHONIOENCODING is honored
 The CLI SHALL NOT change the stdout encoding when the `PYTHONIOENCODING` environment variable is set to a non-empty value.
@@ -44,5 +44,5 @@ The CLI SHALL write the converted Markdown as UTF-8 to the file given with `-o/-
 The project documentation SHALL state that shells which re-encode a native command's output (Windows PowerShell 5.1 redirection, PowerShell pipelines into cmdlets or variables) can corrupt non-ASCII Markdown, and SHALL recommend `-o/--output` as the shell-independent way to obtain UTF-8.
 
 #### Scenario: Agent guide covers the limitation
-- **WHEN** a contributor reads the CLI notes in `CLAUDE.md`
+- **WHEN** a contributor reads the development notes in `CLAUDE.md`
 - **THEN** they find the recommendation to use `markitdown <file> -o <out.md>` instead of `>` in PowerShell

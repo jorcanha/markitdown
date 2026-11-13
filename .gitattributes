@@ -3,3 +3,6 @@ packages/markitdown-sample-plugin/tests/test_files/** linguist-vendored
 
 # Treat PDF files as binary to prevent line ending conversion
 *.pdf binary
+
+# Shell scripts must keep LF endings (they run inside Linux containers)
+*.sh text eol=lf
