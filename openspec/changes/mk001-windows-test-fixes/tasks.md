@@ -330,13 +330,13 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 6. Local final verification
 
-Unticked by the review of 2026-11-13: all three passed at `5ddd389` (re-run by the reviewer, same results), but they are
-the gate before group 7 and must be run again after adjustments R1 (task 3.2) and R2 (task 5.1) are committed.
+All three passed at `5ddd389`, were unticked by the review of 2026-11-13 because they are the gate before group 7, and
+were run again at `406101e`, after adjustments R1 (task 3.2) and R2 (task 5.1): same results.
 
-- [ ] 6.1 `uvx black==26.10.1 --check packages/markitdown/src/markitdown/__main__.py packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py`
+- [x] 6.1 `uvx black==26.10.1 --check packages/markitdown/src/markitdown/__main__.py packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py`
       → `3 files would be left unchanged.`
-- [ ] 6.2 `git diff main --stat -- packages` lists exactly those three files.
-- [ ] 6.3 `openspec validate mk001-windows-test-fixes --strict` → valid. Push the branch.
+- [x] 6.2 `git diff main --stat -- packages` lists exactly those three files.
+- [x] 6.3 `openspec validate mk001-windows-test-fixes --strict` → valid. Push the branch.
 
 ## Review of groups 1–6 (2026-11-13, on the development machine)
 
@@ -359,10 +359,16 @@ implementation's report.
 Findings:
 
 - **R1 (code, low severity) — task 3.2 reopened.** A replaced `sys.stdout` without `isatty` raises `AttributeError`;
-  it works on `main`.
+  it works on `main`. **Resolved in `f32ab6e`.**
 - **R2 (docs) — task 5.1 reopened.** The `PYTHONIOENCODING` note added to `CLAUDE.md` describes the pre-change
-  behavior and misses the consequence that remains.
-- Tasks 6.1–6.3 unticked only because they must be repeated after R1 and R2.
+  behavior and misses the consequence that remains. **Resolved in `406101e`.**
+- Tasks 6.1–6.3 unticked only because they must be repeated after R1 and R2. **Repeated at `406101e`, all pass.**
+
+State after the adjustments (measured at `406101e`): full suite `1141 passed, 49 skipped`, 0 failed, without
+`PYTHONIOENCODING` and `PYTHONUTF8`; `test_cli_misc.py` also passes (`28 passed`) with
+`PYTHONIOENCODING=utf-8:surrogateescape` set. The rows of the table above describe `5ddd389` and were not all
+repeated: the `PYTHONUTF8=1` run, the network test and the cmd.exe / PowerShell end-to-end checks were not re-run
+after R1, which only reorders a guard that those paths evaluate to the same result.
 
 Not reopened — observations for the owner, no action required by this change:
 
@@ -380,8 +386,9 @@ Not reopened — observations for the owner, no action required by this change:
 
 ## 7. Linux verification — PENDING, on the second machine (Podman), any agent
 
-**Blocked until tasks 3.2, 5.1 and 6.1–6.3 are ticked again** (review adjustments R1 and R2). A run made before that
-would verify code that is about to change.
+**Ready to run.** The review adjustments R1 and R2 are applied and groups 1–6 are complete again. Run it on the tip of
+the branch (`406101e` or later); a run made on an earlier commit verified code that has since changed and must be
+repeated. Check A will report one test more than a run before R1 would have; only `failed` / `error` matter.
 
 Do this only after groups 1–6 are pushed. Full step-by-step instructions, expected results, the results template and
 troubleshooting are in [`linux-verification.md`](linux-verification.md) (same folder). The second machine reports only:
