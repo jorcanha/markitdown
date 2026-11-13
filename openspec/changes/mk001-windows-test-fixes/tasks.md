@@ -211,10 +211,10 @@ linux-verify.sh was dry-run in Git Bash against a scratch clone with the prototy
 
 ## 6. Local final verification
 
-- [ ] 6.1 `uvx black==26.10.1 --check packages/markitdown/src/markitdown/__main__.py packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py`
+- [x] 6.1 `uvx black==26.10.1 --check packages/markitdown/src/markitdown/__main__.py packages/markitdown/tests/test_cli_misc.py packages/markitdown/tests/test_cli_vectors.py`
       → `3 files would be left unchanged.`
-- [ ] 6.2 `git diff main --stat -- packages` lists exactly those three files.
-- [ ] 6.3 `openspec validate mk001-windows-test-fixes --strict` → valid. Push the branch.
+- [x] 6.2 `git diff main --stat -- packages` lists exactly those three files.
+- [x] 6.3 `openspec validate mk001-windows-test-fixes --strict` → valid. Push the branch.
 
 ## 7. Linux verification — PENDING, on the second machine (Podman), any agent
 
